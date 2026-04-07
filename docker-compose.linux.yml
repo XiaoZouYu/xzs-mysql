@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.0.33
+    container_name: xzs-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      TZ: "Asia/Shanghai"
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - ./docker/data/mysql:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -uroot -p123456 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  xzs:
+    image: eclipse-temurin:8-jre-jammy
+    container_name: xzs-java
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      TZ: "Asia/Shanghai"
+      JAVA_OPTS: "-Dspring.profiles.active=prod -Duser.timezone=Asia/Shanghai"
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/xzs?useSSL=false&useUnicode=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&allowPublicKeyRetrieval=true&allowMultiQueries=true"
+      SPRING_DATASOURCE_USERNAME: "root"
+      SPRING_DATASOURCE_PASSWORD: "123456"
+    command: ["sh", "-c", "java $JAVA_OPTS -jar /app/xzs.jar"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./release/java/xzs-3.9.0.jar:/app/xzs.jar:ro
+      - ./docker/log:/usr/log/xzs

@@ -2,10 +2,11 @@ const {
   $Message
 } = require('/component/iView/base/index');
 const mtjwxsdk = require('./utils/mtj-wx-sdk.js');
+const config = require('./config.js');
 
 App({
   globalData: {
-    baseAPI: "http://localhost:8000",
+    baseAPI: config.baseAPI,
     pageSize: 20
   },
   onLaunch: function() {
